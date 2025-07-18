@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>马甲线+引体养成计划</title>
+    <style>
+        :root {
+            --primary: #ff6b81;
+            --secondary: #4ecdc4;
+            --light: #f7f7f7;
+            --dark: #333;
+        }
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--light);
+            color: var(--dark);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: var(--primary);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            background-color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+        }
+        .content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .content.active {
+            display: block;
+        }
+        
+        /* 训练页面样式 */
+        .workout-container {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .current-plan {
+            margin-bottom: 20px;
+        }
+        .exercise {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid transparent;
+        }
+        .exercise.current {
+            border-left-color: var(--primary);
+            background-color: #fffde7;
+        }
+        .exercise.completed {
+            background-color: #e8f5e9;
+        }
+        .timer-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #timer {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* 测量记录样式 */
+        .measurement-container {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .measurement-input {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .measurement-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .measurement-history {
+            margin-top: 15px;
+        }
+        .measurement-chart {
+            height: 200px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            position: relative;
+            margin-top: 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 0 10px;
+        }
+        .chart-bar {
+            width: 30px;
+            background: var(--secondary);
+            transition: height 0.5s;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            position: relative;
+        }
+        .chart-bar::after {
+            content: attr(data-date);
+            position: absolute;
+            top: 100%;
+            width: 100%;
+            text-align: center;
+            color: var(--dark);
+            font-size: 10px;
+            margin-top: 5px;
+        }
+        
+        /* 日历样式 */
+        .calendar-container {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .calendar-week {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .week-label {
+            width: 60px;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .calendar-days {
+            display: flex;
+            flex: 1;
+            gap: 5px;
+        }
+        .calendar-day {
+            flex: 1;
+            min-height: 60px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        .day-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .completion-indicator {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0%;
+            background: var(--primary);
+            opacity: 0.3;
+            transition: height 0.5s;
+        }
+        .current-day {
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+        .completed-day .completion-indicator {
+            opacity: 0.7;
+        }
+        .future-day {
+            opacity: 0.6;
+        }
+        
+        /* 训练计划表格样式 */
+        .plan-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .plan-table th, .plan-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .plan-table th {
+            background-color: var(--primary);
+            color: white;
+        }
+        .plan-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        /* 声音控制按钮样式 */
+        .sound-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        .sound-btn {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+        }
+        
+        @media (max-width: 600px) {
+            .measurement-input {
+                flex-direction: column;
+            }
+            .calendar-days {
+                flex-wrap: wrap;
+            }
+            .calendar-day {
+                min-width: calc(20% - 5px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>马甲线+引体养成计划</h1>
+        <p>10周科学训练打卡系统</p>
+    </div>
+
+    <div class="tab-container">
+        <div class="tab active" data-tab="workout">🏋️ 今日训练</div>
+        <div class="tab" data-tab="measurement">📏 身体测量</div>
+        <div class="tab" data-tab="calendar">📅 训练日历</div>
+        <div class="tab" data-tab="plan">📋 训练计划</div>
+    </div>
+
+    <div id="workout-content" class="content active">
+        <div class="workout-container">
+            <h2>今日训练内容</h2>
+            <div class="current-plan" id="currentPlan">
+                <!-- 今日训练内容将通过JavaScript动态生成 -->
+            </div>
+            
+            <div class="timer-container">
+                <div id="timer">00:00</div>
+                <div class="controls">
+                    <button id="startBtn">开始</button>
+                    <button id="pauseBtn" disabled>暂停</button>
+                    <button id="resetBtn" disabled>重置</button>
+                    <button id="nextBtn">下一组</button>
+                    <button id="completeDayBtn">完成今日训练</button>
+                    <button id="skipDayBtn">跳过今日训练</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="measurement-content" class="content">
+        <div class="measurement-container">
+            <h2>身体测量记录</h2>
+            <div class="measurement-input">
+                <input type="number" id="waistInput" placeholder="腹围(cm)" step="0.1">
+                <input type="number" id="weightInput" placeholder="体重(kg)" step="0.1">
+                <button id="saveMeasurement">记录</button>
+            </div>
+            <div class="measurement-history">
+                <h3>腹围变化趋势</h3>
+                <div class="measurement-chart" id="waistChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="calendar-content" class="content">
+        <div class="calendar-container">
+            <h2>训练日历</h2>
+            <div id="calendarView">
+                <!-- 日历内容将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <div id="plan-content" class="content">
+        <div class="workout-container">
+            <h2>10周训练计划</h2>
+            <div id="fullPlan">
+                <!-- 完整训练计划将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 声音控制按钮 -->
+    <div class="sound-control">
+        <button id="soundToggleBtn" class="sound-btn">🔊</button>
+    </div>
+
+    <!-- 音频元素 -->
+    <audio id="tickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3" preload="auto"></audio>
+    <audio id="completeSound" src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" preload="auto"></audio>
+
+    <script>
+        // 训练计划数据 - 按第几天安排
+        const trainingPlan = {
+            weeks: [
+                { // 第1周
+                    title: "核心激活 + 上肢神经适应",
+                    goal: "建立腹肌发力感，激活肱二头肌/背部肌群",
+                    frequency: "每周5次",
+                    schedule: {
+                        "1": { // 第1天
+                            abdomen: [
+                                { name: "仰卧死虫式", sets: 3, reps: "15次", duration: 45 },
+                                { name: "反向卷腹", sets: 3, reps: "12次", duration: 40 },
+                                { name: "毛巾卷腹", sets: 3, reps: "15次", duration: 50 }
+                            ],
+                            upper: [
+                                { name: "墙壁俯卧撑", sets: 2, reps: "12次", duration: 30 },
+                                { name: "地板反向划船", sets: 2, reps: "10次", duration: 35 }
+                            ],
+                            cardio: "休息"
+                        },
+                        "2": { // 第2天
+                            abdomen: [
+                                { name: "仰卧死虫式", sets: 3, reps: "15次", duration: 45 },
+                                { name: "反向卷腹", sets: 3, reps: "12次", duration: 40 },
+                                { name: "毛巾卷腹", sets: 3, reps: "15次", duration: 50 }
+                            ],
+                            upper: [
+                                { name: "仰卧臂屈伸", sets: 2, reps: "12次", duration: 30 },
+                                { name: "桌子反向划船", sets: 2, reps: "8次", duration: 35 }
+                            ],
+                            cardio: "休息"
+                        },
+                        "3": { // 第3天
+                            abdomen: [
+                                { name: "平板支撑", sets: 3, reps: "30秒", duration: 45 },
+                                { name: "侧平板支撑", sets: 2, reps: "20秒/侧", duration: 40 }
+                            ],
+                            upper: [
+                                { name: "墙壁俯卧撑", sets: 3, reps: "12次", duration: 30 },
+                                { name: "地板反向划船", sets: 3, reps: "8次", duration: 35 }
+                            ],
+                            cardio: "快走15分钟"
+                        },
+                        "4": { // 第4天
+                            abdomen: [
+                                { name: "仰卧死虫式", sets: 3, reps: "15次", duration: 45 },
+                                { name: "反向卷腹", sets: 3, reps: "12次", duration: 40 }
+                            ],
+                            upper: [
+                                { name: "仰卧臂屈伸", sets: 3, reps: "12次", duration: 30 },
+                                { name: "桌子反向划船", sets: 3, reps: "8次", duration: 35 }
+                            ],
+                            cardio: "休息"
+                        },
+                        "5": { // 第5天
+                            abdomen: [
+                                { name: "平板支撑", sets: 3, reps: "30秒", duration: 45 },
+                                { name: "侧平板支撑", sets: 2, reps: "20秒/侧", duration: 40 },
+                                { name: "毛巾卷腹", sets: 3, reps: "15次", duration: 50 }
+                            ],
+                            upper: [
+                                { name: "墙壁俯卧撑", sets: 3, reps: "12次", duration: 30 },
+                                { name: "地板反向划船", sets: 3, reps: "8次", duration: 35 }
+                            ],
+                            cardio: "休息"
+                        }
+                    }
+                },
+                { // 第2周
+                    title: "核心强化 + 上肢力量基础",
+                    goal: "增强核心稳定性，提升上肢基础力量",
+                    frequency: "每周5次",
+                    schedule: {
+                        "1": { // 第6天
+                            abdomen: [
+                                { name: "平板支撑", sets: 3, reps: "40秒", duration: 45 },
+                                { name: "侧平板支撑", sets: 3, reps: "25秒/侧", duration: 40 },
+                                { name: "反向卷腹", sets: 3, reps: "15次", duration: 50 }
+                            ],
+                            upper: [
+                                { name: "桌子俯卧撑", sets: 3, reps: "12次", duration: 30 },
+                                { name: "地板反向划船", sets: 3, reps: "10次", duration: 35 }
+                            ],
+                            cardio: "休息"
+                        },
+                        "2": { // 第7天
+                            abdomen: [
+                                { name: "仰卧死虫式", sets: 3, reps: "15次", duration: 45 },
+                                { name: "反向卷腹", sets: 3, reps: "12次", duration: 40 },
+                                { name: "毛巾卷腹", sets: 3, reps: "15次", duration: 50 }
+                            ],
+                            upper: [
+                                { name: "仰卧臂屈伸", sets: 3, reps: "12次", duration: 30 },
+                                { name: "桌子反向划船", sets: 3, reps: "8次", duration: 35 }
+                            ],
+                            cardio: "休息"
+                        },
+                        "3": { // 第8天
+                            abdomen: [
+                                { name: "平板支撑", sets: 3, reps: "40秒", duration: 45 },
+                                { name: "侧平板支撑", sets: 3, reps: "25秒/侧", duration: 40 }
+                            ],
+                            upper: [
+                                { name: "桌子俯卧撑", sets: 3, reps: "12次", duration: 30 },
+                                { name: "地板反向划船", sets: 3, reps: "10次", duration: 35 }
+                            ],
+                            cardio: "快走15分钟"
+                        },
+                        "4": { // 第9天
+                            abdomen: [
+                                { name: "仰卧死虫式", sets: 3, reps: "15次", duration: 45 },
+                                { name: "反向卷腹", sets: 3, reps: "12次", duration: 40 }
+                            ],
+                            upper: [
+                                { name: "仰卧臂屈伸", sets: 3, reps: "12次", duration: 30 },
+                                { name: "桌子反向划船", sets: 3, reps: "8次", duration: 35 }
+                            ],
+                            cardio: "休息"
+                        },
+                        "5": { // 第10天
+                            abdomen: [
+                                { name: "平板支撑", sets: 3, reps: "40秒", duration: 45 },
+                                { name: "侧平板支撑", sets: 3, reps: "25秒/侧", duration: 40 },
+                                { name: "毛巾卷腹", sets: 3, reps: "15次", duration: 50 }
+                            ],
+                            upper: [
+                                { name: "桌子俯卧撑", sets: 3, reps: "12次", duration: 30 },
+                                { name: "地板反向划船", sets: 3, reps: "10次", duration: 35 }
+                            ],
+                            cardio: "休息"
+                        }
+                    }
+                },
+                // 第3-10周数据类似...
+            ]
+        };
+
+        // 当前状态
+        let currentDayNumber = 1; // 从第1天开始
+        let currentWeek = 1;
+        let currentExercise = 0;
+        let currentSet = 1;
+        let timer;
+        let secondsLeft = 0;
+        let isRunning = false;
+        let soundEnabled = JSON.parse(localStorage.getItem('soundEnabled')) ?? true;
+        let completedDates = JSON.parse(localStorage.getItem('completedDates')) || [];
+        let measurements = JSON.parse(localStorage.getItem('measurements')) || [];
+        let todayCompleted = 0;
+        let todayTotal = 0;
+        const programStartDate = new Date('2025-07-18'); // 训练计划开始日期设为7月18日
+
+        // DOM元素
+        const tabs = document.querySelectorAll('.tab');
+        const contents = document.querySelectorAll('.content');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const completeDayBtn = document.getElementById('completeDayBtn');
+        const skipDayBtn = document.getElementById('skipDayBtn');
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const timerDisplay = document.getElementById('timer');
+        const currentPlanEl = document.getElementById('currentPlan');
+        const waistInput = document.getElementById('waistInput');
+        const weightInput = document.getElementById('weightInput');
+        const saveMeasurementBtn = document.getElementById('saveMeasurement');
+        const waistChart = document.getElementById('waistChart');
+        const calendarView = document.getElementById('calendarView');
+        const fullPlanEl = document.getElementById('fullPlan');
+        const tickSound = document.getElementById('tickSound');
+        const completeSound = document.getElementById('completeSound');
+
+        // 初始化
+        function init() {
+            setupTabs();
+            loadTodayPlan();
+            updateMeasurementChart();
+            renderCalendar();
+            renderFullPlan();
+            updateSoundButton();
+            
+            // 从本地存储加载当前天数
+            const savedDay = localStorage.getItem('currentDayNumber');
+            if (savedDay) {
+                currentDayNumber = parseInt(savedDay);
+            }
+            
+            // 激活音频权限
+            document.body.addEventListener('click', initAudio, { once: true });
+        }
+
+        // 初始化音频
+        function initAudio() {
+            // 尝试播放静音音频以激活音频权限
+            tickSound.volume = 0;
+            tickSound.play().then(() => {
+                tickSound.pause();
+                tickSound.currentTime = 0;
+                tickSound.volume = soundEnabled ? 1 : 0;
+            }).catch(e => console.log("音频初始化失败:", e));
+        }
+
+        // 更新声音按钮状态
+        function updateSoundButton() {
+            soundToggleBtn.textContent = soundEnabled ? '🔊' : '🔇';
+            localStorage.setItem('soundEnabled', JSON.stringify(soundEnabled));
+        }
+
+        // 播放声音
+        function playSound(sound) {
+            if (!soundEnabled) return;
+            
+            try {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("声音播放失败:", e));
+            } catch (e) {
+                console.log("声音播放错误:", e);
+            }
+        }
+
+        function setupTabs() {
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(`${tab.dataset.tab}-content`).classList.add('active');
+                });
+            });
+        }
+
+        function loadTodayPlan() {
+            // 计算当前是第几周
+            currentWeek = Math.floor((currentDayNumber - 1) / 5) + 1;
+            
+            // 计算本周的第几天 (1-5)
+            const dayInWeek = ((currentDayNumber - 1) % 5) + 1;
+            
+            const weekPlan = trainingPlan.weeks[currentWeek - 1];
+            const dayPlan = weekPlan.schedule[dayInWeek];
+            
+            let html = `
+                <h3>第${currentWeek}周 第${dayInWeek}天: ${weekPlan.title}</h3>
+                <p><strong>目标:</strong> ${weekPlan.goal}</p>
+                <div class="today-workout">
+                    <h4>腹部训练 (15分钟)</h4>
+            `;
+            
+            // 腹部训练
+            dayPlan.abdomen.forEach((ex, i) => {
+                html += `
+                    <div class="exercise" id="ab-ex-${i}">
+                        <h5>${ex.name}</h5>
+                        <p>${ex.sets}组 × ${ex.reps}</p>
+                    </div>
+                `;
+                todayTotal += ex.sets;
+            });
+            
+            html += `
+                    <h4>上肢训练 (10分钟)</h4>
+            `;
+            
+            // 上肢训练
+            dayPlan.upper.forEach((ex, i) => {
+                html += `
+                    <div class="exercise" id="up-ex-${i}">
+                        <h5>${ex.name}</h5>
+                        <p>${ex.sets}组 × ${ex.reps}</p>
+                    </div>
+                `;
+                todayTotal += ex.sets;
+            });
+            
+            html += `
+                    <h4>有氧/恢复</h4>
+                    <p>${dayPlan.cardio}</p>
+                </div>
+            `;
+            
+            currentPlanEl.innerHTML = html;
+            loadCurrentExercise();
+        }
+
+        function loadCurrentExercise() {
+            // 简化示例，实际应根据训练计划计算
+            secondsLeft = 30;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(secondsLeft / 60);
+            const seconds = secondsLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (!isRunning) {
+                isRunning = true;
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                resetBtn.disabled = false;
+                
+                timer = setInterval(() => {
+                    if (secondsLeft > 0) {
+                        secondsLeft--;
+                        updateTimerDisplay();
+                        
+                        // 最后3秒播放提示音
+                        if (secondsLeft <= 3 && secondsLeft > 0) {
+                            playSound(tickSound);
+                        }
+                    } else {
+                        clearInterval(timer);
+                        isRunning = false;
+                        
+                        // 播放完成音
+                        playSound(completeSound);
+                        
+                        alert('本组训练完成！');
+                    }
+                }, 1000);
+            }
+        }
+
+        function pauseTimer() {
+            clearInterval(timer);
+            isRunning = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            loadCurrentExercise();
+        }
+
+        function nextExercise() {
+            todayCompleted++;
+            updateProgress();
+            
+            // 简化示例，实际应切换到下一个动作
+            loadCurrentExercise();
+        }
+
+        function completeToday() {
+            const today = new Date().toISOString().split('T')[0];
+            if (!completedDates.includes(today)) {
+                completedDates.push(today);
+                localStorage.setItem('completedDates', JSON.stringify(completedDates));
+                
+                // 自动进入下一天
+                currentDayNumber++;
+                localStorage.setItem('currentDayNumber', currentDayNumber);
+                
+                alert('今日训练已完成打卡！将自动进入第' + currentDayNumber + '天');
+                loadTodayPlan();
+                renderCalendar();
+            } else {
+                alert('今日已经打卡过了！');
+            }
+        }
+
+        function skipToday() {
+            if (confirm('确定要跳过今天的训练吗？')) {
+                // 自动进入下一天
+                currentDayNumber++;
+                localStorage.setItem('currentDayNumber', currentDayNumber);
+                
+                alert('已跳过今日训练，将自动进入第' + currentDayNumber + '天');
+                loadTodayPlan();
+                renderCalendar();
+            }
+        }
+
+        function updateProgress() {
+            const progress = (todayCompleted / todayTotal) * 100;
+            // 更新UI显示进度...
+        }
+
+        function updateMeasurementChart() {
+            waistChart.innerHTML = '';
+            const validMeasurements = measurements.filter(m => m.waist !== null).slice(-7); // 只显示最近7次
+            
+            if (validMeasurements.length === 0) return;
+            
+            const maxWaist = Math.max(...validMeasurements.map(m => m.waist));
+            const minWaist = Math.min(...validMeasurements.map(m => m.waist));
+            const range = Math.max(5, maxWaist - minWaist); // 最小范围5cm
+            
+            validMeasurements.forEach((m, i) => {
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.height = `${((m.waist - minWaist) / range) * 100}%`;
+                bar.textContent = m.waist.toFixed(1);
+                bar.setAttribute('data-date', m.date.split('-').slice(1).join('/')); // 显示月/日
+                waistChart.appendChild(bar);
+            });
+        }
+
+        function renderCalendar() {
+            calendarView.innerHTML = '';
+            
+            // 显示10周的训练日历
+            for (let week = 1; week <= 10; week++) {
+                const weekEl = document.createElement('div');
+                weekEl.className = 'calendar-week';
+                
+                const labelEl = document.createElement('div');
+                labelEl.className = 'week-label';
+                labelEl.textContent = `第${week}周`;
+                weekEl.appendChild(labelEl);
+                
+                const daysEl = document.createElement('div');
+                daysEl.className = 'calendar-days';
+                
+                // 每周5天训练日
+                for (let day = 1; day <= 5; day++) {
+                    const dayNumber = (week - 1) * 5 + day;
+                    const isCurrentDay = dayNumber === currentDayNumber;
+                    const isCompleted = dayNumber < currentDayNumber;
+                    const isFuture = dayNumber > currentDayNumber;
+                    
+                    const dayEl = document.createElement('div');
+                    dayEl.className = `calendar-day ${isCurrentDay ? 'current-day' : ''} ${isCompleted ? 'completed-day' : ''} ${isFuture ? 'future-day' : ''}`;
+                    dayEl.setAttribute('data-day', dayNumber);
+                    
+                    const numberEl = document.createElement('div');
+                    numberEl.className = 'day-number';
+                    numberEl.textContent = `第${dayNumber}天`;
+                    dayEl.appendChild(numberEl);
+                    
+                    const completionEl = document.createElement('div');
+                    completionEl.className = 'completion-indicator';
+                    completionEl.style.height = isCompleted ? '100%' : '0%';
+                    dayEl.appendChild(completionEl);
+                    
+                    daysEl.appendChild(dayEl);
+                }
+                
+                weekEl.appendChild(daysEl);
+                calendarView.appendChild(weekEl);
+            }
+        }
+
+        function renderFullPlan() {
+            let html = '';
+            
+            trainingPlan.weeks.forEach((week, weekIndex) => {
+                html += `
+                    <div class="week-plan">
+                        <h3>第${weekIndex + 1}周: ${week.title}</h3>
+                        <p><strong>目标:</strong> ${week.goal}</p>
+                        <p><strong>频率:</strong> ${week.frequency}</p>
+                        <table class="plan-table">
+                            <tr>
+                                <th>训练日</th>
+                                <th>腹部训练</th>
+                                <th>上肢训练</th>
+                                <th>有氧/恢复</th>
+                            </tr>
+                `;
+                
+                for (const [dayNum, plan] of Object.entries(week.schedule)) {
+                    html += `
+                        <tr>
+                            <td>第${dayNum}天</td>
+                            <td>${plan.abdomen.map(ex => `${ex.name} ${ex.sets}×${ex.reps}`).join('<br>')}</td>
+                            <td>${plan.upper.map(ex => `${ex.name} ${ex.sets}×${ex.reps}`).join('<br>')}</td>
+                            <td>${plan.cardio}</td>
+                        </tr>
+                    `;
+                }
+                
+                html += `</table></div>`;
+            });
+            
+            fullPlanEl.innerHTML = html;
+        }
+
+        // 事件监听
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', resetTimer);
+        nextBtn.addEventListener('click', nextExercise);
+        completeDayBtn.addEventListener('click', completeToday);
+        skipDayBtn.addEventListener('click', skipToday);
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            updateSoundButton();
+            
+            // 提供即时反馈
+            if (soundEnabled) {
+                playSound(tickSound);
+            }
+        });
+        
+        saveMeasurementBtn.addEventListener('click', () => {
+            const today = new Date().toISOString().split('T')[0];
+            const waist = parseFloat(waistInput.value);
+            const weight = parseFloat(weightInput.value);
+            
+            if (isNaN(waist)) {
+                alert('请输入有效的腹围数值');
+                return;
+            }
+            
+            const existingIndex = measurements.findIndex(m => m.date === today);
+            if (existingIndex >= 0) {
+                measurements[existingIndex] = {
+                    date: today,
+                    waist: waist,
+                    weight: isNaN(weight) ? measurements[existingIndex].weight : weight
+                };
+            } else {
+                measurements.push({
+                    date: today,
+                    waist: waist,
+                    weight: isNaN(weight) ? null : weight
+                });
+            }
+            
+            localStorage.setItem('measurements', JSON.stringify(measurements));
+            waistInput.value = '';
+            weightInput.value = '';
+            updateMeasurementChart();
+            alert('测量数据已保存！');
+        });
+
+        // 初始化应用
+        init();
+    </script>
+</body>
+</html>
